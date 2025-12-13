@@ -1,0 +1,16 @@
+
+{
+  "name": "whatsapp-render",
+  "version": "1.0.0",
+  "description": "WhatsApp Web JS Express App for Render",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5",
+    "whatsapp-web.js": "^1.26.0",
+    "qrcode": "^1.5.4"
+  }
+}
