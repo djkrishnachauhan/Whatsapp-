@@ -2,58 +2,54 @@ const { Client, LocalAuth } = require("whatsapp-web.js");
 const QRCode = require("qrcode");
 
 let client;
-let isReady = false;
-let ioInstance;
+let status = "idle"; // idle | qr | ready | disconnected
+let qrCode = null;
 
-const initWhatsApp = (io) => {
+const initWhatsApp = async () => {
   if (client) return;
-  ioInstance = io;
 
-  console.log("🚀 Initializing WhatsApp...");
+  status = "starting";
 
   client = new Client({
-    authStrategy: new LocalAuth(),
+    authStrategy: new LocalAuth({ clientId: "main" }),
     puppeteer: {
-      headless: true,
+      headless: "new",
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
         "--disable-dev-shm-usage",
-        "--disable-gpu"
+        "--single-process"
       ]
     }
   });
 
   client.on("qr", async (qr) => {
-    console.log("📸 QR GENERATED");
-    const img = await QRCode.toDataURL(qr);
-    ioInstance.emit("qr", img);
-  });
-
-  client.on("authenticated", () => {
-    console.log("🔐 AUTHENTICATED");
-    ioInstance.emit("status", "Authenticated, loading chats...");
+    qrCode = await QRCode.toDataURL(qr);
+    status = "qr";
+    console.log("QR GENERATED");
   });
 
   client.on("ready", () => {
-    console.log("✅ WHATSAPP READY");
-    isReady = true;
-    ioInstance.emit("ready");
+    status = "ready";
+    qrCode = null;
+    console.log("WHATSAPP READY");
   });
 
-  client.on("disconnected", (reason) => {
-    console.log("❌ DISCONNECTED:", reason);
+  client.on("disconnected", () => {
+    status = "disconnected";
     client = null;
-    isReady = false;
-    ioInstance.emit("logout");
+    qrCode = null;
+    console.log("WHATSAPP DISCONNECTED");
   });
 
   client.initialize();
 };
 
+const getStatus = () => ({ status, qrCode });
+
 const sendBulkMessage = async (number, message, qty) => {
-  if (!client || !isReady) {
-    throw new Error("WhatsApp not ready");
+  if (status !== "ready") {
+    throw new Error("WhatsApp not connected");
   }
 
   const chatId = number + "@c.us";
@@ -64,4 +60,8 @@ const sendBulkMessage = async (number, message, qty) => {
   }
 };
 
-module.exports = { initWhatsApp, sendBulkMessage };
+module.exports = {
+  initWhatsApp,
+  getStatus,
+  sendBulkMessage
+};
