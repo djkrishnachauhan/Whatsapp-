@@ -1,0 +1,82 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>WhatsApp Sender</title>
+  <script src="/socket.io/socket.io.js"></script>
+</head>
+<body style="text-align:center;font-family:Arial">
+
+<h2>WhatsApp Web JS</h2>
+
+<button id="startBtn" onclick="start()">Start WhatsApp</button>
+<div id="status" style="margin:20px"></div>
+<img id="qrImg" style="width:250px;display:none" />
+
+<button id="sendBtn" style="display:none" onclick="openForm()">Send Message</button>
+
+<div id="form" style="display:none;margin-top:20px">
+  <input id="number" placeholder="91XXXXXXXXXX"><br><br>
+  <textarea id="message" placeholder="Message"></textarea><br><br>
+  <input id="qty" type="number" placeholder="Quantity"><br><br>
+  <button onclick="send()">Send</button>
+</div>
+
+<button id="againBtn" style="display:none" onclick="openForm()">Send Again</button>
+
+<script>
+const socket = io();
+
+function start(){
+  fetch("/start-whatsapp");
+  status.innerText="Initializing...";
+}
+
+socket.on("qr",(qr)=>{
+  qrImg.src = qr;
+  qrImg.style.display="block";
+  status.innerText="Scan QR Code";
+});
+
+socket.on("ready",()=>{
+  status.innerText="Connected Successfully";
+  qrImg.style.display="none";
+  startBtn.style.display="none";
+  sendBtn.style.display="inline";
+});
+
+socket.on("logout",()=>{
+  alert("WhatsApp disconnected");
+  location.reload();
+});
+
+function openForm(){
+  form.style.display="block";
+  sendBtn.style.display="none";
+  againBtn.style.display="none";
+}
+
+async function send(){
+  status.innerText="Sending...";
+  const res = await fetch("/send-message",{
+    method:"POST",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify({
+      number:number.value,
+      message:message.value,
+      quantity:qty.value
+    })
+  });
+  const data = await res.json();
+  if(data.success){
+    status.innerText="Message Sent Successfully";
+    form.style.display="none";
+    againBtn.style.display="inline";
+  } else {
+    status.innerText=data.error;
+  }
+}
+</script>
+
+</body>
+</html>
