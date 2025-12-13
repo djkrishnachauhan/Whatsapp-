@@ -29,7 +29,7 @@ const socket = io();
 
 function start(){
   fetch("/start-whatsapp");
-  status.innerText="Initializing...";
+  status.innerText = "Initializing WhatsApp...";
 }
 
 socket.on("qr",(qr)=>{
@@ -38,8 +38,12 @@ socket.on("qr",(qr)=>{
   status.innerText="Scan QR Code";
 });
 
+socket.on("status",(msg)=>{
+  status.innerText = msg;
+});
+
 socket.on("ready",()=>{
-  status.innerText="Connected Successfully";
+  status.innerText="Connected Successfully ✅";
   qrImg.style.display="none";
   startBtn.style.display="none";
   sendBtn.style.display="inline";
