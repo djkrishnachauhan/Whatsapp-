@@ -1,21 +1,19 @@
-
 <!DOCTYPE html>
 <html>
 <head>
   <title>WhatsApp Sender</title>
-  <script src="/socket.io/socket.io.js"></script>
 </head>
 <body style="text-align:center;font-family:Arial">
 
 <h2>WhatsApp Web JS</h2>
 
 <button id="startBtn" onclick="start()">Start WhatsApp</button>
-<div id="status" style="margin:20px"></div>
-<img id="qrImg" style="width:250px;display:none" />
+<div id="statusText" style="margin:20px"></div>
+<img id="qrImg" style="width:250px;display:none">
 
 <button id="sendBtn" style="display:none" onclick="openForm()">Send Message</button>
 
-<div id="form" style="display:none;margin-top:20px">
+<div id="form" style="display:none">
   <input id="number" placeholder="91XXXXXXXXXX"><br><br>
   <textarea id="message" placeholder="Message"></textarea><br><br>
   <input id="qty" type="number" placeholder="Quantity"><br><br>
@@ -25,59 +23,62 @@
 <button id="againBtn" style="display:none" onclick="openForm()">Send Again</button>
 
 <script>
-const socket = io();
+let poll;
 
 function start(){
   fetch("/start-whatsapp");
-  status.innerText = "Initializing WhatsApp...";
+  statusText.innerText = "Initializing...";
+  poll = setInterval(checkStatus, 2000);
 }
 
-socket.on("qr",(qr)=>{
-  qrImg.src = qr;
-  qrImg.style.display="block";
-  status.innerText="Scan QR Code";
-});
+async function checkStatus(){
+  const res = await fetch("/status");
+  const data = await res.json();
 
-socket.on("status",(msg)=>{
-  status.innerText = msg;
-});
+  if(data.status === "qr"){
+    qrImg.src = data.qrCode;
+    qrImg.style.display = "block";
+    statusText.innerText = "Scan QR Code";
+  }
 
-socket.on("ready",()=>{
-  status.innerText="Connected Successfully ✅";
-  qrImg.style.display="none";
-  startBtn.style.display="none";
-  sendBtn.style.display="inline";
-});
+  if(data.status === "ready"){
+    clearInterval(poll);
+    qrImg.style.display = "none";
+    startBtn.style.display = "none";
+    sendBtn.style.display = "inline-block";
+    statusText.innerText = "Connected Successfully ✅";
+  }
 
-socket.on("logout",()=>{
-  alert("WhatsApp disconnected");
-  location.reload();
-});
+  if(data.status === "disconnected"){
+    location.reload();
+  }
+}
 
 function openForm(){
-  form.style.display="block";
-  sendBtn.style.display="none";
-  againBtn.style.display="none";
+  form.style.display = "block";
+  sendBtn.style.display = "none";
+  againBtn.style.display = "none";
 }
 
 async function send(){
-  status.innerText="Sending...";
-  const res = await fetch("/send-message",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({
-      number:number.value,
-      message:message.value,
-      quantity:qty.value
+  statusText.innerText = "Sending...";
+  const res = await fetch("/send-message", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      number: number.value,
+      message: message.value,
+      quantity: qty.value
     })
   });
+
   const data = await res.json();
   if(data.success){
-    status.innerText="Message Sent Successfully";
-    form.style.display="none";
-    againBtn.style.display="inline";
+    form.style.display = "none";
+    againBtn.style.display = "inline-block";
+    statusText.innerText = "Message Sent Successfully ✅";
   } else {
-    status.innerText=data.error;
+    statusText.innerText = data.error;
   }
 }
 </script>
