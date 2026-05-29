@@ -2,11 +2,17 @@ const { Client, LocalAuth } = require("whatsapp-web.js");
 const QRCode = require("qrcode");
 
 let client;
-let status = "idle"; // idle | qr | ready | disconnected
+let status = "idle";
 let qrCode = null;
 
 const initWhatsApp = async () => {
-  if (client) return;
+  if (client && status === "ready") return;
+
+  // Destroy existing broken client if any
+  if (client) {
+    try { await client.destroy(); } catch (_) {}
+    client = null;
+  }
 
   status = "starting";
 
@@ -42,7 +48,7 @@ const initWhatsApp = async () => {
     console.log("WHATSAPP DISCONNECTED");
   });
 
-  client.initialize();
+  await client.initialize();  // ← await added
 };
 
 const getStatus = () => ({ status, qrCode });
@@ -60,8 +66,4 @@ const sendBulkMessage = async (number, message, qty) => {
   }
 };
 
-module.exports = {
-  initWhatsApp,
-  getStatus,
-  sendBulkMessage
-};
+module.exports = { initWhatsApp, getStatus, sendBulkMessage };
