@@ -17,17 +17,18 @@ const initWhatsApp = async () => {
   status = "starting";
 
   client = new Client({
-    authStrategy: new LocalAuth({ clientId: "main" }),
-    puppeteer: {
-      headless: "new",
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--single-process"
-      ]
-    }
-  });
+  authStrategy: new LocalAuth({ clientId: "main" }),
+  puppeteer: {
+    headless: "new",
+    executablePath: "/opt/render/project/src/chrome/linux-150.0.7864.2/chrome-linux64/chrome",
+    args: [
+      "--no-sandbox",
+      "--disable-setuid-sandbox",
+      "--disable-dev-shm-usage",
+      "--single-process"
+    ]
+  }
+});
 
   client.on("qr", async (qr) => {
     qrCode = await QRCode.toDataURL(qr);
